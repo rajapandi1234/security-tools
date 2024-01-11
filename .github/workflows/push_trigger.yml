@@ -18,7 +18,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file DataBreachDetector/Dockerfile --tag databreachdetector:latest
+      run: docker build . --file DataBreachDetector/Dockerfile --tag maheshbinayak1/databreachdetector:latest
     - name: Log in to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
     - name: Push the Docker image
