@@ -34,7 +34,7 @@ ENV s3-user-key=
 ENV s3-user-secret=
 ENV s3-bucket-name=
 
-COPY requirements.txt .
+COPY DataBreachDetector/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY mosipvaluefinder.py .
-CMD ["python", "mosipvaluefinder.py"]
+COPY DataBreachDetector/databreachdetector.py .
+CMD ["python", "databreachdetector.py"]

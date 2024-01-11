@@ -1,0 +1,22 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker build . --file DataBreachDetector/Dockerfile --tag databreachdetector:$(date +%s)
