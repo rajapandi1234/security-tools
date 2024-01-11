@@ -36,5 +36,5 @@ ENV s3-bucket-name=
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY mosipvaluefinder.py .
+COPY DataBreachDetector.py .
 CMD ["python", "mosipvaluefinder.py"]
