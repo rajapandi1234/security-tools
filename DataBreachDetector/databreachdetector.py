@@ -91,6 +91,7 @@ def deduce_sensitive_data_in_databases():
 
     connection = psycopg2.connect(
         host='postgres.dev.mosip.net',
+        port=5432,
         user='postgres',
         password='mQi298ZW7p',
         database=databases[0]['name']
