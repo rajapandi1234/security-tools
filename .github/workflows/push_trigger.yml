@@ -19,4 +19,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file DataBreachdetector/Dockerfile --tag databreachdetector:$(date +%s)
+      run: docker build . --file DataBreachDetector/Dockerfile --tag databreachdetector:$(date +%s)
