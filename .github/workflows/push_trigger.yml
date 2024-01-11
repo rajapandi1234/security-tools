@@ -2,9 +2,13 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
+      - develop
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
+      - develop
 
 jobs:
 
@@ -15,4 +19,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: docker build . --file Dockerfile --tag Databreachdetector:$(date +%s)
