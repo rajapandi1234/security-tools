@@ -87,7 +87,7 @@ def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucke
 
 def deduce_sensitive_data_in_databases():
     databases = [
-       {"name": "mosip_prereg", "schema": "prereg"},
+       {"name": "mosip_esignet", "schema": "esignet"},
        # ... other databases
     ]
 
@@ -114,7 +114,7 @@ def deduce_sensitive_data_in_databases():
         print(f"\nDeduced findings saved to {output_file_path}, mails.txt, mobile_numbers.txt")
 
         # Add the following lines to push reports to MinIO
-        s3_host = "http://minio.minio:9000"  # Update with your MinIO host
+        s3_host = "10.3.148.78"  # Update with your MinIO host
         s3_region = ""  # Update with your S3 region
         s3_user_key = "admin"  # Update with your S3 user key
         s3_user_secret = "http://minio.minio:9000"  # Update with your S3 user secret
