@@ -20,8 +20,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file DataBreachDetector/Dockerfile --tag maheshbinayak1/databreachdetector:update
+      run: docker build . --file DataBreachDetector/Dockerfile --tag maheshbinayak1/databreachdetector:final
     - name: Log in to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
     - name: Push the Docker image
-      run: docker push maheshbinayak1/databreachdetector:update
+      run: docker push maheshbinayak1/databreachdetector:final
