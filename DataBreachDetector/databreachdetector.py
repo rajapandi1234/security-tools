@@ -1,3 +1,4 @@
+from configparser import ConfigParser
 from minio import Minio
 from minio.error import ResponseError
 import psycopg2
@@ -86,18 +87,22 @@ def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucke
         print(f"MinIO Error: {err}")
 
 def deduce_sensitive_data_in_databases():
+    # Read connection details from db.properties file
+    db_host, db_port, db_user, db_password, \
+    minio_host, minio_region, minio_user_key, minio_user_secret, minio_bucket_name = read_db_properties()
+
+    # Define the databases list
     databases = [
-       {"name": "mosip_esignet", "schema": "esignet"},
-       # ... other databases
+        {"name": "mosip_esignet", "schema": "esignet"},
+        # Add other databases as needed
     ]
 
     connection = psycopg2.connect(
-        host='postgres.dev.mosip.net',
-        port=5432,
-        user='postgres',
-        password='mQi298ZW7p',
-        database=databases[0]['name']
-    )
+        host=db_host,
+        port=db_port,
+        user=db_user,
+        password=db_password,
+        database="")  # The database name is taken from the script's 'databases' list
 
     try:
         output_file_path = 'id.txt'
@@ -114,15 +119,35 @@ def deduce_sensitive_data_in_databases():
         print(f"\nDeduced findings saved to {output_file_path}, mails.txt, mobile_numbers.txt")
 
         # Add the following lines to push reports to MinIO
-        s3_host = "minio.minio:9000"  # Update with your MinIO host
-        s3_region = ""  # Update with your S3 region
-        s3_user_key = "admin"  # Update with your S3 user key
-        s3_user_secret = "aYjhgRDXB4"  # Update with your S3 user secret
-        s3_bucket_name = "security-testrig"  # Update with your S3 bucket name
+        s3_host = minio_host
+        s3_region = minio_region
+        s3_user_key = minio_user_key
+        s3_user_secret = minio_user_secret
+        s3_bucket_name = minio_bucket_name
 
         push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucket_name)
 
     finally:
         connection.close()
 
+# Function to read properties from db.properties file
+def read_db_properties():
+    config = ConfigParser()
+    config.read('db.properties')
+
+    db_host = config.get('PostgreSQL Connection', 'db_host')
+    db_port = config.getint('PostgreSQL Connection', 'db_port')
+    db_user = config.get('PostgreSQL Connection', 'db_user')
+    db_password = config.get('PostgreSQL Connection', 'db_password')
+
+    minio_host = config.get('MinIO Connection', 'minio_host')
+    minio_region = config.get('MinIO Connection', 'minio_region')
+    minio_user_key = config.get('MinIO Connection', 'minio_user_key')
+    minio_user_secret = config.get('MinIO Connection', 'minio_user_secret')
+    minio_bucket_name = config.get('MinIO Connection', 'minio_bucket_name')
+
+    return (db_host, db_port, db_user, db_password,
+            minio_host, minio_region, minio_user_key, minio_user_secret, minio_bucket_name)
+
+# Call the main function
 deduce_sensitive_data_in_databases()
