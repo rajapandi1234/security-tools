@@ -33,10 +33,10 @@ ENV s3-region=
 ENV s3-user-key=
 ENV s3-user-secret=
 ENV s3-bucket-name=
-ENV pg-host=
-ENV pg-port=
-ENV pg-user=
-ENV pg-password=
+ENV db-server=
+ENV db-port=
+ENV db-su-user=
+ENV postgres-password=
 
 COPY DataBreachDetector/requirements.txt .
 COPY DataBreachDetector/db.properties .

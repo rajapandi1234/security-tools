@@ -92,10 +92,10 @@ def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucke
 
 def deduce_sensitive_data_in_databases():
     # Read connection details from environment variables or db.properties file
-    db_host = os.environ.get('pg-host')
-    db_port = os.environ.get('pg-port')
-    db_user = os.environ.get('pg-user')
-    db_password = os.environ.get('pg-password')
+    db_server = os.environ.get('db-server')
+    db_port = os.environ.get('db-port')
+    db_user = os.environ.get('db-su-user')
+    db_password = os.environ.get('postgres-password')
 
     minio_host = os.environ.get('s3-host')
     minio_region = os.environ.get('s3-region')
@@ -104,20 +104,20 @@ def deduce_sensitive_data_in_databases():
     minio_bucket_name = os.environ.get('s3-bucket-name')
 
     # If environment variables are not set, read from db.properties file
-    if not all([db_host, db_port, db_user, db_password, minio_host, minio_region, minio_user_key, minio_user_secret, minio_bucket_name]):
+    if not all([db_server, db_port, db_user, db_password, minio_host, minio_region, minio_user_key, minio_user_secret, minio_bucket_name]):
         config = ConfigParser()
         config.read('db.properties')
 
-        db_host = config.get('PostgreSQL Connection', 'db_host')
-        db_port = config.get('PostgreSQL Connection', 'db_port')
-        db_user = config.get('PostgreSQL Connection', 'db_user')
-        db_password = config.get('PostgreSQL Connection', 'db_password')
+        db_server = config.get('PostgreSQL Connection', 'db-server')
+        db_port = config.get('PostgreSQL Connection', 'db-port')
+        db_user = config.get('PostgreSQL Connection', 'db-su-user')
+        db_password = config.get('PostgreSQL Connection', 'postgres-password')
 
-        minio_host = config.get('MinIO Connection', 'minio_host')
-        minio_region = config.get('MinIO Connection', 'minio_region')
-        minio_user_key = config.get('MinIO Connection', 'minio_user_key')
-        minio_user_secret = config.get('MinIO Connection', 'minio_user_secret')
-        minio_bucket_name = config.get('MinIO Connection', 'minio_bucket_name')
+        minio_host = config.get('MinIO Connection', 's3-host')
+        minio_region = config.get('MinIO Connection', 's3-region')
+        minio_user_key = config.get('MinIO Connection', 's3-user-key')
+        minio_user_secret = config.get('MinIO Connection', 's3-user-secret')
+        minio_bucket_name = config.get('MinIO Connection', 's3-bucket-name')
 
     # Define the databases list
     databases = [
@@ -126,7 +126,7 @@ def deduce_sensitive_data_in_databases():
     ]
 
     connection = psycopg2.connect(
-        host=db_host,
+        host=db_server,
         port=db_port,
         user=db_user,
         password=db_password,
