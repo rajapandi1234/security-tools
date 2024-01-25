@@ -1,0 +1,4 @@
+psycopg2-binary==2.9.1
+python-stdnum==1.19
+deduce==2.4.4
+minio==6.0.2
