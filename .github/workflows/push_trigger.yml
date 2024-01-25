@@ -26,8 +26,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - SERVICE_LOCATION: 'DataBreachDetector'
-            SERVICE_NAME: 'DataBreachDetector'
+          - SERVICE_LOCATION: 'databreachdetector'
+            SERVICE_NAME: 'databreachdetector'
       fail-fast: false
     name: ${{ matrix.SERVICE_NAME }}
     uses: mosip/kattu/.github/workflows/docker-build.yml@master
