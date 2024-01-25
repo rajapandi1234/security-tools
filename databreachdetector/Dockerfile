@@ -33,8 +33,13 @@ ENV s3-region=
 ENV s3-user-key=
 ENV s3-user-secret=
 ENV s3-bucket-name=
+ENV db-server=
+ENV db-port=
+ENV db-su-user=
+ENV postgres-password=
 
-COPY DataBreachDetector/requirements.txt .
+COPY requirements.txt .
+COPY db.properties .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY DataBreachDetector/databreachdetector.py .
+COPY databreachdetector.py .
 CMD ["python", "databreachdetector.py"]

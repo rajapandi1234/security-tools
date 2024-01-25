@@ -1,3 +1,4 @@
+from configparser import ConfigParser
 from minio import Minio
 from minio.error import ResponseError
 import psycopg2
@@ -76,6 +77,10 @@ def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucke
         if not mc.bucket_exists(s3_bucket_name):
             mc.make_bucket(s3_bucket_name, location=s3_region)
 
+        # Ensure files exist before attempting to upload
+        for filename in ['id.txt', 'mails.txt', 'mobile_numbers.txt']:
+            open(filename, 'a').close()
+
         mc.fput_object(s3_bucket_name, 'reports/id.txt', 'id.txt')
         mc.fput_object(s3_bucket_name, 'reports/mails.txt', 'mails.txt')
         mc.fput_object(s3_bucket_name, 'reports/mobile_numbers.txt', 'mobile_numbers.txt')
@@ -86,18 +91,46 @@ def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucke
         print(f"MinIO Error: {err}")
 
 def deduce_sensitive_data_in_databases():
+    # Read connection details from environment variables or db.properties file
+    db_server = os.environ.get('db-server')
+    db_port = os.environ.get('db-port')
+    db_user = os.environ.get('db-su-user')
+    db_password = os.environ.get('postgres-password')
+
+    minio_host = os.environ.get('s3-host')
+    minio_region = os.environ.get('s3-region')
+    minio_user_key = os.environ.get('s3-user-key')
+    minio_user_secret = os.environ.get('s3-user-secret')
+    minio_bucket_name = os.environ.get('s3-bucket-name')
+
+    # If environment variables are not set, read from db.properties file
+    if not all([db_server, db_port, db_user, db_password, minio_host, minio_user_key, minio_user_secret, minio_bucket_name]):
+        config = ConfigParser()
+        config.read('db.properties')
+
+        db_server = config.get('PostgreSQL Connection', 'db-server')
+        db_port = config.get('PostgreSQL Connection', 'db-port')
+        db_user = config.get('PostgreSQL Connection', 'db-su-user')
+        db_password = config.get('PostgreSQL Connection', 'postgres-password')
+
+        minio_host = config.get('MinIO Connection', 's3-host')
+        minio_region = config.get('MinIO Connection', 's3-region')
+        minio_user_key = config.get('MinIO Connection', 's3-user-key')
+        minio_user_secret = config.get('MinIO Connection', 's3-user-secret')
+        minio_bucket_name = config.get('MinIO Connection', 's3-bucket-name')
+
+    # Define the databases list
     databases = [
-       {"name": "mosip_prereg", "schema": "prereg"},
-       # ... other databases
+        {"name": "mosip_esignet", "schema": "esignet"},
+        # Add other databases as needed
     ]
 
     connection = psycopg2.connect(
-        host='postgres.dev.mosip.net',
-        port=5432,
-        user='postgres',
-        password='mQi298ZW7p',
-        database=databases[0]['name']
-    )
+        host=db_server,
+        port=db_port,
+        user=db_user,
+        password=db_password,
+        database="")  # The database name is taken from the script's 'databases' list
 
     try:
         output_file_path = 'id.txt'
@@ -114,15 +147,16 @@ def deduce_sensitive_data_in_databases():
         print(f"\nDeduced findings saved to {output_file_path}, mails.txt, mobile_numbers.txt")
 
         # Add the following lines to push reports to MinIO
-        s3_host = "http://minio.minio:9000"  # Update with your MinIO host
-        s3_region = ""  # Update with your S3 region
-        s3_user_key = "admin"  # Update with your S3 user key
-        s3_user_secret = "http://minio.minio:9000"  # Update with your S3 user secret
-        s3_bucket_name = "security-testrig"  # Update with your S3 bucket name
+        s3_host = minio_host
+        s3_region = minio_region
+        s3_user_key = minio_user_key
+        s3_user_secret = minio_user_secret
+        s3_bucket_name = minio_bucket_name
 
         push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucket_name)
 
     finally:
         connection.close()
 
+# Call the main function
 deduce_sensitive_data_in_databases()
