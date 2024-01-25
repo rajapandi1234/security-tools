@@ -38,8 +38,8 @@ ENV db-port=
 ENV db-su-user=
 ENV postgres-password=
 
-COPY DataBreachDetector/requirements.txt .
-COPY DataBreachDetector/db.properties .
+COPY requirements.txt .
+COPY db.properties .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY DataBreachDetector/databreachdetector.py .
+COPY databreachdetector.py .
 CMD ["python", "databreachdetector.py"]
