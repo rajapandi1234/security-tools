@@ -23,10 +23,6 @@ def is_valid_mobile_number(phone_number):
 def deduce_sensitive_data(connection, database_name, schema_name, output_file, ignore_columns, ignore_tables):
     deduce_instance = Deduce()
 
-    mail_count = 0
-    mobile_count = 0
-    id_count = 0
-
     with connection.cursor() as cursor:
         cursor.execute(f"SET search_path TO {schema_name}")
         cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema=%s", (schema_name,))
@@ -35,14 +31,19 @@ def deduce_sensitive_data(connection, database_name, schema_name, output_file, i
         with open(output_file, 'a') as deduced_file:
             for table_name in tables:
                 if ignore_tables and table_name in ignore_tables:
-                    print(f"Ignoring Table: {table_name} in Database: {database_name}")
+                    #print(f"Ignoring Table: {table_name} in Database: {database_name}")
                     continue
 
-                print(f"Currently checking Table: {table_name} in Database: {database_name}")
+                #print(f"Currently checking Table: {table_name} in Database: {database_name}")
                 deduced_file.write(f"Currently checking Table: {table_name} in Database: {database_name}\n")
 
                 cursor.execute(f'SELECT * FROM {table_name}')
                 rows = cursor.fetchall()
+
+                id_count = 0
+                mail_count = 0
+                mobile_count = 0
+
 
                 for row in rows:
                     for i, column_value in enumerate(row):
@@ -57,23 +58,26 @@ def deduce_sensitive_data(connection, database_name, schema_name, output_file, i
                         )
 
                         if deduced_result.annotations and is_valid_verhoeff(column_value):
+                            id_count += 1
                             deduced_file.write(f"Column: {column_name}, Data: {column_value}\n")
                             deduced_file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
-                            id_count += 1
+
 
                         with open('mobile_numbers.txt', 'a') as file:
                             if deduced_result.annotations and is_valid_mobile_number(column_value):
+                                mobile_count += 1
                                 file.write(f"Column: {column_name}, Data: {column_value}\n")
                                 file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
-                                mobile_count += 1
+
 
                         with open('mails.txt', 'a') as file:
                             if deduced_result.annotations and is_valid_email(column_value):
+                                mail_count += 1
                                 file.write(f"Column: {column_name}, Data: {column_value}\n")
                                 file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
-                                mail_count += 1
 
-    print(f"{mail_count} mail id's, {mobile_count} mobile numbers, and {id_count} id's are found in {database_name} database.")
+
+                print(f"{mail_count} mail id's {mobile_count} mobile numbers and {id_count} id's are found in this {table_name} table in {database_name} database")
 
 def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucket_name):
     mc = Minio(s3_host,
