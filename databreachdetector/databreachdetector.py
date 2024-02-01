@@ -112,9 +112,11 @@ def deduce_sensitive_data_in_databases():
     minio_user_secret = os.environ.get('s3-user-secret')
     minio_bucket_name = os.environ.get('s3-bucket-name')
 
+    # Initialize config variable
+    config = ConfigParser()
+
     # If environment variables are not set, read from db.properties file
-    if not all([db_server, db_port, db_user, db_password, minio_host, minio_user_key, minio_user_secret, minio_bucket_name]):
-        config = ConfigParser()
+    if not all([db_server, db_port, db_user, db_password, minio_host, minio_region, minio_user_key, minio_user_secret, minio_bucket_name]):
         config.read('db.properties')
 
         db_server = config.get('PostgreSQL Connection', 'db-server')
