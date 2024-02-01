@@ -113,7 +113,7 @@ def deduce_sensitive_data_in_databases():
     minio_bucket_name = os.environ.get('s3-bucket-name')
 
     # If environment variables are not set, read from db.properties file
-    if not all([db_server, db_port, db_user, db_password, minio_host, minio_region, minio_user_key, minio_user_secret, minio_bucket_name]):
+    if not all([db_server, db_port, db_user, db_password, minio_host, minio_user_key, minio_user_secret, minio_bucket_name]):
         config = ConfigParser()
         config.read('db.properties')
 
