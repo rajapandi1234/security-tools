@@ -15,11 +15,8 @@ ARG container_user_uid=1001
 ARG container_user_gid=1001
 
 # Create user group
-RUN groupadd -r ${container_user_group}
-
-# Create user with specific ID
-RUN useradd -u ${container_user_uid} -r -g ${container_user_group} -s /bin/bash -m -d /home/${container_user} ${container_user}
-
+RUN groupadd -r ${container_user_group} && useradd -u ${container_user_uid} -r -g ${container_user_group} -s /bin/bash -m -d /home/${container_user} ${container_user}
+RUN chown -R ${container_user}:${container_user} /home/${container_user}
 WORKDIR /home/${container_user}
 USER ${container_user}
 

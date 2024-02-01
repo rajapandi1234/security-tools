@@ -16,12 +16,16 @@ def is_valid_email(email):
     return bool(match)
 
 def is_valid_mobile_number(phone_number):
-    pattern = re.compile(r'^[9]\d{9}$')
+    pattern = re.compile(r'^[912345678]\d{9}$')
     match = re.match(pattern, str(phone_number))
     return bool(match)
 
 def deduce_sensitive_data(connection, database_name, schema_name, output_file, ignore_columns, ignore_tables):
     deduce_instance = Deduce()
+
+    mail_count = 0
+    mobile_count = 0
+    id_count = 0
 
     with connection.cursor() as cursor:
         cursor.execute(f"SET search_path TO {schema_name}")
@@ -55,16 +59,21 @@ def deduce_sensitive_data(connection, database_name, schema_name, output_file, i
                         if deduced_result.annotations and is_valid_verhoeff(column_value):
                             deduced_file.write(f"Column: {column_name}, Data: {column_value}\n")
                             deduced_file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
+                            id_count += 1
 
                         with open('mobile_numbers.txt', 'a') as file:
                             if deduced_result.annotations and is_valid_mobile_number(column_value):
                                 file.write(f"Column: {column_name}, Data: {column_value}\n")
                                 file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
+                                mobile_count += 1
 
                         with open('mails.txt', 'a') as file:
                             if deduced_result.annotations and is_valid_email(column_value):
                                 file.write(f"Column: {column_name}, Data: {column_value}\n")
                                 file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
+                                mail_count += 1
+
+    print(f"{mail_count} mail id's, {mobile_count} mobile numbers, and {id_count} id's are found in {database_name} database.")
 
 def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucket_name):
     mc = Minio(s3_host,
@@ -119,6 +128,13 @@ def deduce_sensitive_data_in_databases():
         minio_user_secret = config.get('MinIO Connection', 's3-user-secret')
         minio_bucket_name = config.get('MinIO Connection', 's3-bucket-name')
 
+    # Read ignored tables and columns from db.properties
+    ignore_tables_str = config.get('Ignored Tables', 'ignore_tables', fallback='')
+    ignore_columns_str = config.get('Ignored Columns', 'ignore_columns', fallback='')
+
+    ignore_tables = [table.strip() for table in ignore_tables_str.split(',')]
+    ignore_columns = [column.strip() for column in ignore_columns_str.split(',')]
+
     # Define the databases list
     databases = [
         {"name": "mosip_esignet", "schema": "esignet"},
@@ -134,10 +150,6 @@ def deduce_sensitive_data_in_databases():
 
     try:
         output_file_path = 'id.txt'
-        ignore_columns = ['status', 'cr_by']
-        ignore_tables = ['client_detail', 'reg_available_slot', 'batch_job_execution',
-                         'batch_job_execution_context', 'batch_job_execution_params', 'batch_job_instance',
-                         'batch_step_execution', 'batch_step_execution_context']
 
         for db_info in databases:
             print(f"\nAnalyzing data in Database: {db_info['name']}\n")
