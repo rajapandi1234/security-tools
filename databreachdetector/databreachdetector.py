@@ -1,9 +1,9 @@
-from configparser import ConfigParser
-from minio import Minio
-from minio.error import ResponseError
 import psycopg2
+from configparser import ConfigParser
 from stdnum import verhoeff
 from deduce import Deduce
+from minio import Minio
+from minio.error import ResponseError
 import re
 import os
 
@@ -16,7 +16,7 @@ def is_valid_email(email):
     return bool(match)
 
 def is_valid_mobile_number(phone_number):
-    pattern = re.compile(r'^[9]\d{9}$')
+    pattern = re.compile(r'^[912345678]\d{9}$')
     match = re.match(pattern, str(phone_number))
     return bool(match)
 
@@ -31,14 +31,18 @@ def deduce_sensitive_data(connection, database_name, schema_name, output_file, i
         with open(output_file, 'a') as deduced_file:
             for table_name in tables:
                 if ignore_tables and table_name in ignore_tables:
-                    print(f"Ignoring Table: {table_name} in Database: {database_name}")
+                    # print(f"Ignoring Table: {table_name} in Database: {database_name}")
                     continue
 
-                print(f"Currently checking Table: {table_name} in Database: {database_name}")
+                # print(f"Currently checking Table: {table_name} in Database: {database_name}")
                 deduced_file.write(f"Currently checking Table: {table_name} in Database: {database_name}\n")
 
                 cursor.execute(f'SELECT * FROM {table_name}')
                 rows = cursor.fetchall()
+
+                id_count = 0
+                mail_count = 0
+                mobile_count = 0
 
                 for row in rows:
                     for i, column_value in enumerate(row):
@@ -53,18 +57,23 @@ def deduce_sensitive_data(connection, database_name, schema_name, output_file, i
                         )
 
                         if deduced_result.annotations and is_valid_verhoeff(column_value):
+                            id_count += 1
                             deduced_file.write(f"Column: {column_name}, Data: {column_value}\n")
                             deduced_file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
 
                         with open('mobile_numbers.txt', 'a') as file:
                             if deduced_result.annotations and is_valid_mobile_number(column_value):
+                                mobile_count += 1
                                 file.write(f"Column: {column_name}, Data: {column_value}\n")
                                 file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
 
                         with open('mails.txt', 'a') as file:
                             if deduced_result.annotations and is_valid_email(column_value):
+                                mail_count += 1
                                 file.write(f"Column: {column_name}, Data: {column_value}\n")
                                 file.write(f"Deduced Findings: {deduced_result.annotations}\n\n")
+
+                print(f"{mail_count} mail id's, {mobile_count} mobile numbers, and {id_count} id's are found in {table_name} table in {database_name} database")
 
 def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucket_name):
     mc = Minio(s3_host,
@@ -91,37 +100,37 @@ def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucke
         print(f"MinIO Error: {err}")
 
 def deduce_sensitive_data_in_databases():
-    # Read connection details from environment variables or db.properties file
-    db_server = os.environ.get('db-server')
-    db_port = os.environ.get('db-port')
-    db_user = os.environ.get('db-su-user')
-    db_password = os.environ.get('postgres-password')
-
-    minio_host = os.environ.get('s3-host')
-    minio_region = os.environ.get('s3-region')
-    minio_user_key = os.environ.get('s3-user-key')
-    minio_user_secret = os.environ.get('s3-user-secret')
-    minio_bucket_name = os.environ.get('s3-bucket-name')
+    # Initialize config variable
+    config = ConfigParser()
 
     # If environment variables are not set, read from db.properties file
-    if not all([db_server, db_port, db_user, db_password, minio_host, minio_user_key, minio_user_secret, minio_bucket_name]):
-        config = ConfigParser()
+    if not all([os.environ.get('db-server'), os.environ.get('db-port'), os.environ.get('db-su-user'),
+                os.environ.get('postgres-password'), os.environ.get('s3-host'), os.environ.get('s3-region'),
+                os.environ.get('s3-user-key'), os.environ.get('s3-user-secret'), os.environ.get('s3-bucket-name')]):
         config.read('db.properties')
 
-        db_server = config.get('PostgreSQL Connection', 'db-server')
-        db_port = config.get('PostgreSQL Connection', 'db-port')
-        db_user = config.get('PostgreSQL Connection', 'db-su-user')
-        db_password = config.get('PostgreSQL Connection', 'postgres-password')
+    # Read PostgreSQL and MinIO details from environment variables or db.properties
+    db_server = os.environ.get('db-server') or config.get('PostgreSQL Connection', 'db-server', fallback='')
+    db_port = os.environ.get('db-port') or config.get('PostgreSQL Connection', 'db-port', fallback='')
+    db_user = os.environ.get('db-su-user') or config.get('PostgreSQL Connection', 'db-su-user', fallback='')
+    db_password = os.environ.get('postgres-password') or config.get('PostgreSQL Connection', 'postgres-password', fallback='')
 
-        minio_host = config.get('MinIO Connection', 's3-host')
-        minio_region = config.get('MinIO Connection', 's3-region')
-        minio_user_key = config.get('MinIO Connection', 's3-user-key')
-        minio_user_secret = config.get('MinIO Connection', 's3-user-secret')
-        minio_bucket_name = config.get('MinIO Connection', 's3-bucket-name')
+    minio_host = os.environ.get('s3-host') or config.get('MinIO Connection', 's3-host', fallback='')
+    minio_region = os.environ.get('s3-region') or config.get('MinIO Connection', 's3-region', fallback='')
+    minio_user_key = os.environ.get('s3-user-key') or config.get('MinIO Connection', 's3-user-key', fallback='')
+    minio_user_secret = os.environ.get('s3-user-secret') or config.get('MinIO Connection', 's3-user-secret', fallback='')
+    minio_bucket_name = os.environ.get('s3-bucket-name') or config.get('MinIO Connection', 's3-bucket-name', fallback='')
+
+    # Read ignored tables and columns from db.properties
+    ignore_tables_str = config.get('Ignored Tables', 'ignore_tables', fallback='')
+    ignore_columns_str = config.get('Ignored Columns', 'ignore_columns', fallback='')
+
+    ignore_tables = [table.strip() for table in ignore_tables_str.split(',')] if ignore_tables_str else []
+    ignore_columns = [column.strip() for column in ignore_columns_str.split(',')] if ignore_columns_str else []
 
     # Define the databases list
     databases = [
-        {"name": "mosip_esignet", "schema": "esignet"},
+        {"name": "mosip_pms", "schema": "pms"},
         # Add other databases as needed
     ]
 
@@ -130,14 +139,11 @@ def deduce_sensitive_data_in_databases():
         port=db_port,
         user=db_user,
         password=db_password,
-        database="")  # The database name is taken from the script's 'databases' list
+        database=databases[0]['name']
+    )
 
     try:
         output_file_path = 'id.txt'
-        ignore_columns = ['status', 'cr_by']
-        ignore_tables = ['client_detail', 'reg_available_slot', 'batch_job_execution',
-                         'batch_job_execution_context', 'batch_job_execution_params', 'batch_job_instance',
-                         'batch_step_execution', 'batch_step_execution_context']
 
         for db_info in databases:
             print(f"\nAnalyzing data in Database: {db_info['name']}\n")
