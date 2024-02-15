@@ -131,6 +131,21 @@ def deduce_sensitive_data_in_databases():
     # Define the databases list
     databases = [
         {"name": "mosip_pms", "schema": "pms"},
+        {"name": "mosip_credential", "schema": "credential"},
+        {"name": "mosip_esignet", "schema": "esignet"},
+        {"name": "mosip_hotlist", "schema": "hotlist"},
+        {"name": "mosip_ida", "schema": "ida"},
+        {"name": "mosip_idmap", "schema": "idmap"},
+        {"name": "mosip_idrepo", "schema": "idrepo"},
+        {"name": "mosip_kernel", "schema": "kernel"},
+        {"name": "mosip_master", "schema": "master"},
+        {"name": "mosip_mockidentitysystem", "schema": "mockidentitysystem"},
+        {"name": "mosip_pms", "schema": "pms"},
+        {"name": "mosip_regprc", "schema": "regprc"},
+        {"name": "mosip_resident", "schema": "resident"},
+        {"name": "mosip_toolkit", "schema": "toolkit"},
+        {"name": "mosip_prereg", "schema": "prereg"},
+        {"name": "mosip_digitalcard", "schema": "digitalcard"}
         # Add other databases as needed
     ]
 
