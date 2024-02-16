@@ -140,7 +140,6 @@ def deduce_sensitive_data_in_databases():
         {"name": "mosip_kernel", "schema": "kernel"},
         {"name": "mosip_master", "schema": "master"},
         {"name": "mosip_mockidentitysystem", "schema": "mockidentitysystem"},
-        {"name": "mosip_pms", "schema": "pms"},
         {"name": "mosip_regprc", "schema": "regprc"},
         {"name": "mosip_resident", "schema": "resident"},
         {"name": "mosip_toolkit", "schema": "toolkit"},
