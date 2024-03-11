@@ -153,13 +153,17 @@ def push_reports_to_s3(s3_host, s3_region, s3_user_key, s3_user_secret, s3_bucke
             mc.make_bucket(s3_bucket_name, location=s3_region)
 
         # Ensure files exist before attempting to upload
-        for filename in ['id.txt', 'mails.txt', 'mobile_numbers.txt']:
+        for filename in ['id.txt', 'mails.txt', 'mobile_numbers.txt','names.txt','ages.txt','dates.txt','urls.txt','locations.txt']:
             open(filename, 'a').close()
 
         mc.fput_object(s3_bucket_name, 'reports/id.txt', 'id.txt')
         mc.fput_object(s3_bucket_name, 'reports/mails.txt', 'mails.txt')
         mc.fput_object(s3_bucket_name, 'reports/mobile_numbers.txt', 'mobile_numbers.txt')
-
+        mc.fput_object(s3_bucket_name, 'reports/names.txt', 'names.txt')
+        mc.fput_object(s3_bucket_name, 'reports/ages.txt', 'ages.txt')
+        mc.fput_object(s3_bucket_name, 'reports/dates.txt', 'dates.txt')
+        mc.fput_object(s3_bucket_name, 'reports/url.txt', 'url.txt')
+        mc.fput_object(s3_bucket_name, 'reports/locations.txt', 'locations.txt')
         print("\nReports pushed to MinIO")
 
     except ResponseError as err:
