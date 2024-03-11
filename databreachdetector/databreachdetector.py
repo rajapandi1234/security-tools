@@ -2,8 +2,8 @@ import psycopg2
 from configparser import ConfigParser
 from stdnum import verhoeff
 from deduce import Deduce
-#from minio import Minio
-#from minio.error import ResponseError
+from minio import Minio
+from minio.error import ResponseError
 import re
 import os
 
