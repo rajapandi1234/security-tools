@@ -37,6 +37,7 @@ ENV postgres-password=
 
 COPY expired.txt .
 COPY requirements.txt .
+COPY bootstrap.properties .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY new.py .
 CMD ["python", "new.py"]

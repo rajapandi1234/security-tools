@@ -1,6 +1,8 @@
-import requests
+import os
 import json
 import psycopg2
+import requests
+from configparser import ConfigParser
 
 # Function to format certificate data
 def format_certificate(cert_data):
@@ -8,22 +10,13 @@ def format_certificate(cert_data):
     formatted_cert_data = cert_data.replace("\n", "\\n")
     return formatted_cert_data
 
-# Function to retrieve certificate data from database
-def retrieve_certificate_data(partner_id):
-    # PostgreSQL connection parameters
-    db_host = "postgres.csrmbka.mosip.net"
-    db_port = "5432"
-    db_name_pms = "mosip_pms"
-    db_name_keymgr = "mosip_keymgr"
-    db_user = "postgres"
-    db_password = "S9ONAmKGVL"
-
+def retrieve_certificate_data(partner_id, db_host, db_port, db_user, db_password):
     try:
         # Connect to the PMS database
         pms_conn = psycopg2.connect(
             host=db_host,
             port=db_port,
-            database=db_name_pms,
+            database="mosip_pms",
             user=db_user,
             password=db_password
         )
@@ -36,10 +29,12 @@ def retrieve_certificate_data(partner_id):
 
         # Query to retrieve cert_data using the certificate alias
         sql_query_cert_data = f"SELECT cert_data FROM keymgr.partner_cert_store WHERE cert_id = '{certificate_alias}';"
+
+        # Connect to the Keymgr database
         keymgr_conn = psycopg2.connect(
             host=db_host,
             port=db_port,
-            database=db_name_keymgr,
+            database="mosip_keymgr",
             user=db_user,
             password=db_password
         )
@@ -63,8 +58,8 @@ def retrieve_certificate_data(partner_id):
         return None
 
 # Function to authenticate and retrieve the token
-def authenticate_and_get_token():
-    auth_url = "https://api-internal.csrmbka.mosip.net/v1/authmanager/authenticate/clientidsecretkey"
+def authenticate_and_get_token(base_url, client_secret):
+    auth_url = f"{base_url}/v1/authmanager/authenticate/clientidsecretkey"
     headers = {"Content-Type": "application/json"}
 
     auth_data = {
@@ -73,9 +68,9 @@ def authenticate_and_get_token():
         "request": {
             "appId": "ida",
             "clientId": "mosip-deployment-client",
-            "secretKey": "5RmeIL1pUsMcOZzU"
+            "secretKey": client_secret
         },
-        "requesttime": "2024-03-25T12:27:47.968Z",
+        "requesttime": "",  # Generate timestamp in desired format
         "version": "string"
     }
 
@@ -88,8 +83,8 @@ def authenticate_and_get_token():
         return None
 
 # Function to upload certificate with authentication token
-def upload_certificate_with_token(token, cert_data, partner_id):
-    upload_url = "https://api-internal.csrmbka.mosip.net/v1/partnermanager/partners/certificate/upload"
+def upload_certificate_with_token(token, cert_data, partner_id, base_url):
+    upload_url = f"{base_url}/v1/partnermanager/partners/certificate/upload"
     headers = {
         "Content-Type": "application/json",
         "Cookie": f"Authorization={token}"
@@ -106,18 +101,46 @@ def upload_certificate_with_token(token, cert_data, partner_id):
             "partnerDomain": "AUTH",
             "partnerId": partner_id
         },
-        "requesttime": "2024-03-25T12:27:47.968Z",
+        "requesttime": "",  # Generate timestamp in desired format
         "version": "string"
     }
 
     # Log the upload request body
-    print("Upload Request Body:", json.dumps(upload_data))
+    #print("Upload Request Body:", json.dumps(upload_data))
 
     response = requests.post(upload_url, headers=headers, json=upload_data)
+
+    # Print both request and response
+    print("Upload API Request Body:", upload_data)
     print("Upload API Response:", response.text)
 
+    # Check if "certificateId" is present in the response
+    if "certificateId" not in response.text:
+        print("Certificate upload failed.")
+    else:
+        print("Certificate upload successful.")
+
+# Read environment variables
+postgres_host = os.environ.get('POSTGRES_HOST')
+postgres_port = os.environ.get('POSTGRES_PORT')
+postgres_user = os.environ.get('POSTGRES_USER')
+postgres_password = os.environ.get('POSTGRES_PASSWORD')
+base_url = os.environ.get('BASE_URL')
+client_secret = os.environ.get('CLIENT_SECRET')
+
+# If environment variables are not set, read from bootstrap.properties file
+if not all([postgres_host, postgres_port, postgres_user, postgres_password, base_url, client_secret]):
+    config = ConfigParser()
+    config.read('bootstrap.properties')
+    postgres_host = config.get('Database', 'db-host', fallback='')
+    postgres_port = config.get('Database', 'db-port', fallback='')
+    postgres_user = config.get('Database', 'db-user', fallback='')
+    postgres_password = config.get('Database', 'db-password', fallback='')
+    base_url = config.get('API', 'base-url', fallback='')
+    client_secret = config.get('API', 'client-secret', fallback='')
+
 # Authenticate and get the token
-token = authenticate_and_get_token()
+token = authenticate_and_get_token(base_url, client_secret)
 
 # Check if token is obtained successfully
 if token:
@@ -128,12 +151,11 @@ if token:
     # Iterate through each partner ID and retrieve certificate data
     for partner_id in partner_ids:
         print(f"Certificate Data for Partner ID: {partner_id}")
-        cert_data = retrieve_certificate_data(partner_id)
+        cert_data = retrieve_certificate_data(partner_id, postgres_host, postgres_port, postgres_user, postgres_password)
         if cert_data is not None:
             print(cert_data)
             # Upload certificate with token
-            upload_certificate_with_token(token, cert_data, partner_id)
-        print("------------------------------------------")
+            upload_certificate_with_token(token, cert_data, partner_id, base_url)
 
     if not partner_ids:
         print("No partner IDs found in the expired.txt file.")
