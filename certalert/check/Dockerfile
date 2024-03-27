@@ -25,11 +25,6 @@ ENV DATE="$(date --utc +%FT%T.%3NZ)"
 ENV ENABLE_INSECURE=false
 ENV MODULE=
 
-ENV s3-host=
-ENV s3-region=
-ENV s3-user-key=
-ENV s3-user-secret=
-ENV s3-bucket-name=
 ENV db-server=
 ENV db-port=
 ENV db-su-user=
@@ -39,5 +34,5 @@ COPY expired.txt .
 COPY requirements.txt .
 COPY bootstrap.properties .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY new.py .
-CMD ["python", "new.py"]
+COPY renewmaster.py .
+CMD ["python", "renewmaster.py"]

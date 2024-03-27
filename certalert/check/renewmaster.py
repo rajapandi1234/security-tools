@@ -111,16 +111,16 @@ def upload_certificate_with_token(token, cert_data, partner_id, base_url):
 
     response = requests.post(upload_url, headers=headers, json=upload_data)
 
-    # Print both request and response
+    # Print both request and response for upload API for debugging
     #print("Upload API Request Body:", upload_data)
     #print("Upload API Response:", response.text)
 
     # Check if "certificateId" is present in the response
     if "certificateId" not in response.text:
-        print("Certificate upload failed.")
+        print("Certificate renewal failed.")
         print("Upload API Response:", response.text)
     else:
-        print("Certificate upload successful.")
+        print("Certificate renewed successfully.")
 
 # Read environment variables
 postgres_host = os.environ.get('db-host')
@@ -152,10 +152,10 @@ if token:
 
     # Iterate through each partner ID and retrieve certificate data
     for partner_id in partner_ids:
-        print(f"Certificate Data for Partner ID: {partner_id}")
+        print(f"Certificate renewal started for Partner ID: {partner_id}")
         cert_data = retrieve_certificate_data(partner_id, postgres_host, postgres_port, postgres_user, postgres_password)
         if cert_data is not None:
-            print(cert_data)
+           # print(cert_data)
             # Upload certificate with token
             upload_certificate_with_token(token, cert_data, partner_id, base_url)
 
