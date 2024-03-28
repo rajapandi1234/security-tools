@@ -25,16 +25,7 @@ ENV DATE="$(date --utc +%FT%T.%3NZ)"
 ENV ENABLE_INSECURE=false
 ENV MODULE=
 
-ENV s3-host=
-ENV s3-region=
-ENV s3-user-key=
-ENV s3-user-secret=
-ENV s3-bucket-name=
-ENV db-server=
-ENV db-port=
-ENV db-su-user=
-ENV postgres-password=
-
 COPY partner.properties .
 COPY certalert.sh .
+COPY bootstrap.properties .
 CMD ["sh", "certalert.sh"]
