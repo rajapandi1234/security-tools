@@ -86,7 +86,7 @@ for PARTNER_ID in $PARTNER_IDS; do
 
       # Check if certificate is expired
       if [ "$VALIDITY_END_NUMERIC" -lt "$CURRENT_DATE_NUMERIC" ]; then
-        echo $PARTNER_ID > expired.txt
+
         echo "Certificate for Partner ID: $PARTNER_ID HAS EXPIRED. Validity End Date: $VALIDITY_END"
       else
         echo "Certificate for Partner ID: $PARTNER_ID is valid. Valid until: $VALIDITY_END"
