@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.13.0a6-slim
 
 ARG SOURCE
 ARG COMMIT_HASH
