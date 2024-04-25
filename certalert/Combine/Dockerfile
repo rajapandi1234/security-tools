@@ -36,6 +36,8 @@ ENV db-su-user=
 ENV postgres-password=
 
 COPY partner.properties .
-COPY certalert.py .
+COPY requirements.txt .
+COPY checkupdate.py .
 COPY bootstrap.properties .
-CMD ["python", "certalert.py"]
+RUN pip install --no-cache-dir -r requirements.txt
+CMD ["python", "checkupdate.py"]
