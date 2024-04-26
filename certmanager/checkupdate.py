@@ -2,7 +2,32 @@ import os
 import json
 import psycopg2
 import requests
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+from datetime import datetime, timedelta
 from configparser import ConfigParser
+
+# Function to read value from bootstrap.properties
+def read_bootstrap_properties(key):
+    with open('bootstrap.properties', 'r') as file:
+        for line in file:
+            if line.startswith(key):
+                return line.split('=')[1].strip()
+    return None
+
+# Function to check if certificate is expired
+def is_certificate_expired(expiration_date):
+    # Parse expiration date string
+    expiration_date = datetime.strptime(expiration_date, "%b %d %H:%M:%S %Y %Z")
+    # Get current date
+    current_date = datetime.utcnow()
+    # Compare expiration date with current date
+    return current_date > expiration_date
+
+# Function to write expired certificates to a text file
+def write_to_expired_txt(cert_name):
+    with open('expired.txt', 'a') as file:
+        file.write(cert_name + '\n')
 
 # Function to format certificate data
 def format_certificate(cert_data):
@@ -10,6 +35,7 @@ def format_certificate(cert_data):
     formatted_cert_data = cert_data.replace("\n", "\\n")
     return formatted_cert_data
 
+# Function to retrieve certificate data from the database
 def retrieve_certificate_data(partner_id, db_host, db_port, db_user, db_password):
     try:
         # Connect to the PMS database
@@ -54,12 +80,12 @@ def retrieve_certificate_data(partner_id, db_host, db_port, db_user, db_password
         return formatted_cert_data
 
     except Exception as e:
-        print(f"Error retrieving certificate data for Partner ID '{partner_id}',Check partner name in expired.txt: {str(e)}")
+        print(f"Error retrieving certificate data for Partner ID '{partner_id}', Check partner name in expired.txt: {str(e)}")
         return None
 
 # Function to authenticate and retrieve the token
 def authenticate_and_get_token(base_url, client_secret):
-    auth_url = f"{base_url}/v1/authmanager/authenticate/clientidsecretkey"
+    auth_url = f"https://{base_url}/v1/authmanager/authenticate/clientidsecretkey"
     headers = {"Content-Type": "application/json"}
 
     auth_data = {
@@ -67,7 +93,7 @@ def authenticate_and_get_token(base_url, client_secret):
         "metadata": {},
         "request": {
             "appId": "ida",
-            "clientId": "mosip-deployment-client",
+            "clientId": "mosip-pms-client",
             "secretKey": client_secret
         },
         "requesttime": "",  # Generate timestamp in desired format
@@ -85,7 +111,7 @@ def authenticate_and_get_token(base_url, client_secret):
 
 # Function to upload certificate with authentication token
 def upload_certificate_with_token(token, cert_data, partner_id, base_url):
-    upload_url = f"{base_url}/v1/partnermanager/partners/certificate/upload"
+    upload_url = f"https://{base_url}/v1/partnermanager/partners/certificate/upload"
     headers = {
         "Content-Type": "application/json",
         "Cookie": f"Authorization={token}"
@@ -106,29 +132,21 @@ def upload_certificate_with_token(token, cert_data, partner_id, base_url):
         "version": "string"
     }
 
-    # Log the upload request body
-    #print("Upload Request Body:", json.dumps(upload_data))
-
     response = requests.post(upload_url, headers=headers, json=upload_data)
 
-    # Print both request and response for upload API for debugging
-    #print("Upload API Request Body:", upload_data)
-    #print("Upload API Response:", response.text)
-
-    # Check if "certificateId" is present in the response
     if "certificateId" not in response.text:
         print("Certificate renewal failed.")
         print("Upload API Response:", response.text)
     else:
         print("Certificate renewed successfully.")
 
-# Read environment variables
+# Fetching environment variables or values from bootstrap.properties
 postgres_host = os.environ.get('db-host')
 postgres_port = os.environ.get('db-port')
 postgres_user = os.environ.get('db-su-user')
 postgres_password = os.environ.get('postgres-password')
 base_url = os.environ.get('mosip-api-internal-host')
-client_secret = os.environ.get('mosip_deployment_client_secret')
+client_secret = os.environ.get('mosip_pms_client_secret')
 
 # If environment variables are not set, read from bootstrap.properties file
 if not all([postgres_host, postgres_port, postgres_user, postgres_password, base_url, client_secret]):
@@ -139,27 +157,69 @@ if not all([postgres_host, postgres_port, postgres_user, postgres_password, base
     postgres_user = config.get('Database', 'db-su-user', fallback='')
     postgres_password = config.get('Database', 'postgres-password', fallback='')
     base_url = config.get('API', 'mosip-api-internal-host', fallback='')
-    client_secret = config.get('API', 'mosip_deployment_client_secret', fallback='')
+    client_secret = config.get('API', 'mosip_pms_client_secret', fallback='')
 
 # Authenticate and get the token
-token = authenticate_and_get_token(base_url, client_secret)
+TOKEN = authenticate_and_get_token(base_url, client_secret)
 
 # Check if token is obtained successfully
-if token:
-    # Read partner IDs from the expired.txt file
-    with open("expired.txt", "r") as file:
-        partner_ids = [line.strip() for line in file if line.strip()]
+if TOKEN:
+    # Read pre-expiry days from bootstrap.properties
+    PRE_EXPIRY_DAYS = read_bootstrap_properties("pre-expiry-days")
 
-    # Iterate through each partner ID and retrieve certificate data
-    for partner_id in partner_ids:
+    # PARTNER_IDS read from partner.properties
+    with open('partner.properties', 'r') as file:
+        for line in file:
+            if line.startswith('PARTNER_ID'):
+                partner_ids = line.strip().split('=')[1].split(',')
+                for PARTNER_ID in partner_ids:
+                    print(f"\nProcessing partner ID: {PARTNER_ID.strip()}")
+                    # Request certificate information
+                    try:
+                        req = Request(f"https://{base_url}/v1/partnermanager/partners/{PARTNER_ID.strip()}/certificate",
+                                      headers={
+                                          "Content-Type": "application/json",
+                                          "Cookie": f"Authorization={TOKEN}"
+                                      },
+                                      method="GET")
+                        response = urlopen(req)
+                        response_data = json.loads(response.read().decode('utf-8'))
+                        CERTIFICATE_DATA = response_data.get('response', {}).get('certificateData')
+                        print(CERTIFICATE_DATA)
+                        # Run openssl command to print certificate details
+                        openssl_command = f"echo '{CERTIFICATE_DATA}' | openssl x509 -noout -enddate"
+                        expiration_date = os.popen(openssl_command).read().split('=')[1].strip()
+                        print("Certificate expiration date:", expiration_date)
+                        # Check if certificate is expired or pre-expiry
+                        if is_certificate_expired(expiration_date) or \
+                                (datetime.strptime(expiration_date, "%b %d %H:%M:%S %Y %Z") - datetime.utcnow()) <= timedelta(days=int(PRE_EXPIRY_DAYS)):
+                            write_to_expired_txt(PARTNER_ID.strip())
+                    except HTTPError as e:
+                        print(f"Error occurred while fetching certificate information for {PARTNER_ID}: {e}")
+                        continue
+
+                    if not CERTIFICATE_DATA:
+                        print(f"No data available for {PARTNER_ID} in keymanager.")
+                        continue
+
+    # Check if expired.txt exists before trying to read from it
+    if os.path.exists("expired.txt"):
+        with open("expired.txt", "r") as file:
+            expired_partner_ids = [line.strip() for line in file if line.strip()]
+    else:
+        expired_partner_ids = []
+
+    # Check if any certificates were found to be expired
+    if not expired_partner_ids:
+        print("None of the certs have expired.")
+        exit(0)
+
+    for partner_id in expired_partner_ids:
         print(f"Certificate renewal started for Partner ID: {partner_id}")
         cert_data = retrieve_certificate_data(partner_id, postgres_host, postgres_port, postgres_user, postgres_password)
         if cert_data is not None:
-           # print(cert_data)
-            # Upload certificate with token
-            upload_certificate_with_token(token, cert_data, partner_id, base_url)
+            upload_certificate_with_token(TOKEN, cert_data, partner_id, base_url)
 
-    if not partner_ids:
-        print("No partner IDs found in the expired.txt file.")
+    print("Certificate check and renewal process completed.")
 else:
     print("Failed while trying to get auth-token")
