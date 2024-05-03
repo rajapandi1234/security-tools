@@ -147,6 +147,7 @@ postgres_user = os.environ.get('db-su-user')
 postgres_password = os.environ.get('postgres-password')
 base_url = os.environ.get('mosip-api-internal-host')
 client_secret = os.environ.get('mosip_pms_client_secret')
+pre_expiry_days = os.environ.get('pre-expiry-days')
 
 # If environment variables are not set, read from bootstrap.properties file
 if not all([postgres_host, postgres_port, postgres_user, postgres_password, base_url, client_secret]):
@@ -158,7 +159,7 @@ if not all([postgres_host, postgres_port, postgres_user, postgres_password, base
     postgres_password = config.get('Database', 'postgres-password', fallback='')
     base_url = config.get('API', 'mosip-api-internal-host', fallback='')
     client_secret = config.get('API', 'mosip_pms_client_secret', fallback='')
-
+    pre_expiry_days = config.get('API', 'pre-expiry-days', fallback='')
 # Authenticate and get the token
 TOKEN = authenticate_and_get_token(base_url, client_secret)
 
