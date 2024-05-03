@@ -26,9 +26,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - SERVICE_LOCATION: 'security-tools/databreachdetector'
+          - SERVICE_LOCATION: 'databreachdetector'
             SERVICE_NAME: 'databreachdetector'
-          - SERVICE_LOCATION: 'security-tools/certmanager'
+          - SERVICE_LOCATION: 'certmanager'
             SERVICE_NAME: 'certmanager'
       fail-fast: false
     name: ${{ matrix.SERVICE_NAME }}
