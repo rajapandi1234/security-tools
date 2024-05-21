@@ -147,17 +147,37 @@ postgres_user = os.environ.get('db-su-user')
 postgres_password = os.environ.get('postgres-password')
 base_url = os.environ.get('mosip-api-internal-host')
 client_secret = os.environ.get('mosip_pms_client_secret')
+pre_expiry_days = os.environ.get('pre-expiry-days')
 
-# If environment variables are not set, read from bootstrap.properties file
-if not all([postgres_host, postgres_port, postgres_user, postgres_password, base_url, client_secret]):
+missing_env_vars = []
+
+if not postgres_host:
+    missing_env_vars.append('db-host')
+if not postgres_port:
+    missing_env_vars.append('db-port')
+if not postgres_user:
+    missing_env_vars.append('db-su-user')
+if not postgres_password:
+    missing_env_vars.append('postgres-password')
+if not base_url:
+    missing_env_vars.append('mosip-api-internal-host')
+if not client_secret:
+    missing_env_vars.append('mosip_pms_client_secret')
+if not pre_expiry_days:
+    missing_env_vars.append('pre-expiry-days')
+
+# If any environment variables are not set, read from bootstrap.properties file
+if missing_env_vars:
+    print(f"Missing environment variables: {', '.join(missing_env_vars)}. Falling back to bootstrap.properties.")
     config = ConfigParser()
     config.read('bootstrap.properties')
-    postgres_host = config.get('Database', 'db-host', fallback='')
-    postgres_port = config.get('Database', 'db-port', fallback='')
-    postgres_user = config.get('Database', 'db-su-user', fallback='')
-    postgres_password = config.get('Database', 'postgres-password', fallback='')
-    base_url = config.get('API', 'mosip-api-internal-host', fallback='')
-    client_secret = config.get('API', 'mosip_pms_client_secret', fallback='')
+    postgres_host = config.get('Database', 'db-host', fallback=postgres_host)
+    postgres_port = config.get('Database', 'db-port', fallback=postgres_port)
+    postgres_user = config.get('Database', 'db-su-user', fallback=postgres_user)
+    postgres_password = config.get('Database', 'postgres-password', fallback=postgres_password)
+    base_url = config.get('API', 'mosip-api-internal-host', fallback=base_url)
+    client_secret = config.get('API', 'mosip_pms_client_secret', fallback=client_secret)
+    pre_expiry_days = config.get('API', 'pre-expiry-days', fallback=pre_expiry_days)
 
 # Authenticate and get the token
 TOKEN = authenticate_and_get_token(base_url, client_secret)
@@ -165,7 +185,7 @@ TOKEN = authenticate_and_get_token(base_url, client_secret)
 # Check if token is obtained successfully
 if TOKEN:
     # Read pre-expiry days from bootstrap.properties
-    PRE_EXPIRY_DAYS = read_bootstrap_properties("pre-expiry-days")
+    PRE_EXPIRY_DAYS = pre_expiry_days
 
     # PARTNER_IDS read from partner.properties
     with open('partner.properties', 'r') as file:
