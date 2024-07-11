@@ -200,7 +200,7 @@ def deduce_sensitive_data_in_databases():
 
     # Define the databases list
     databases = [
-        {"name": "mosip_pms", "schema": "pms"},
+        {"name": "mosip_resident", "schema": "resident"},
         # Add other databases as needed
     ]
 
