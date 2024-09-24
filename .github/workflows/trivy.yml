@@ -29,7 +29,7 @@ jobs:
       - name: Build Docker image
         run: |
           cd "${{ env.SERVICE_LOCATION }}"
-          docker build . --file Dockerfile --tag ${{ env.SERVICE_NAME }}:${{ env.VERSION }}
+          docker build . --file databreachdetector--tag ${{ env.SERVICE_NAME }}:${{ env.VERSION }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.20.0
