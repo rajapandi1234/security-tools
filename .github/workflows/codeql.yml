@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: java-kotlin
+        - language: python
           build-mode: none # This mode only analyzes Java. Set this to 'autobuild' or 'manual' to analyze Kotlin too.
        
     steps:
