@@ -2,9 +2,9 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "MOSIP-37836" ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "MOSIP-37836" ]
   schedule:
     - cron: '18 0 * * 6'
 
