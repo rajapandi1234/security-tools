@@ -37,7 +37,7 @@ ENV db-port=
 ENV db-su-user=
 ENV postgres-password=
 
-COPY local.properties
+COPY local.properties .
 COPY requirements.txt .
 COPY auditsweeper.py .
 RUN pip install --no-cache-dir -r requirements.txt
