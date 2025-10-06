@@ -1,0 +1,19 @@
+apiVersion: v2
+name: auditsweeper
+description: A Helm chart to deploy auditsweeper
+type: application
+version: 0.0.1-develop
+appVersion: ""
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    tags:
+      - bitnami-common
+    version: 1.x.x
+home: https://mosip.io
+keywords:
+  - mosip
+  - auditsweeper
+maintainers:
+  - email: info@mosip.io
+    name: MOSIP

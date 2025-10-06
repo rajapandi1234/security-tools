@@ -1,4 +1,4 @@
-name: Build databreach-detector
+name: Building Security Tools
 
 on:
   release:
@@ -30,12 +30,16 @@ jobs:
             SERVICE_NAME: 'databreachdetector'
           - SERVICE_LOCATION: 'certmanager'
             SERVICE_NAME: 'certmanager'
+          - SERVICE_LOCATION: 'auditsweeper'
+            SERVICE_NAME: 'auditsweeper'
+            ONLY_DOCKER: true
       fail-fast: false
     name: ${{ matrix.SERVICE_NAME }}
     uses: mosip/kattu/.github/workflows/docker-build.yml@master
     with:
       SERVICE_LOCATION: ${{ matrix.SERVICE_LOCATION }}
       SERVICE_NAME: ${{ matrix.SERVICE_NAME }}
+      ONLY_DOCKER: ${{ matrix.ONLY_DOCKER }}
     secrets:
       DEV_NAMESPACE_DOCKER_HUB: ${{ secrets.DEV_NAMESPACE_DOCKER_HUB }}
       ACTOR_DOCKER_HUB: ${{ secrets.ACTOR_DOCKER_HUB }}
