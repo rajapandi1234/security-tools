@@ -17,7 +17,7 @@ def get_db_credentials():
         "postgres-password", "log-age-days"
     ]
 
-    env_vars = {var: os.getenv(var.upper().replace('-', '_')) for var in required_vars}
+    env_vars = {var: os.getenv(var) for var in required_vars}
 
     # Check if all environment variables are set
     if all(env_vars.values()):
