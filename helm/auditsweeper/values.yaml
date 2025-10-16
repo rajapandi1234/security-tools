@@ -51,7 +51,7 @@ service:
 
 image:
   registry: docker.io
-  repository: mosipqa/auditsweeper
+  repository: mosipdev/auditsweeper
   tag: develop
 
   ## Specify a imagePullPolicy
@@ -215,7 +215,7 @@ extraEnvVars: []
 extraEnvVarsCM:
   - global
   - db
-  - log-age-days
+  - auditsweeper
 ## Secret with extra environment variables
 ##
 extraEnvVarsSecret:
